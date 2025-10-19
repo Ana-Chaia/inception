@@ -1,0 +1,125 @@
+services:
+####### MARIADB ########
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+      dockerfile: Dockerfile
+    container_name: mariadb
+    user: "${HOST_UID}:${HOST_GID}"
+    image: mariadb
+    env_file:
+      - .env
+    volumes:
+      - "db:/var/lib"
+    networks:
+      - docker_inception_net
+    restart: always
+
+####### WORDPRESS ########
+  wordpress:
+    build: ./requirements/wordpress
+    image: wordpress
+    container_name: wordpress
+    volumes:
+      - wp:/var/www/wordpress
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    networks:
+      - docker_inception_net
+    expose:
+      - "9000"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /var/www/html/.wp_ready ]"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+####### NGINX ########
+  nginx:
+    build: ./requirements/nginx
+    image: nginx
+    container_name: nginx
+    volumes:
+      - wp:/var/www/wordpress
+    ports:
+      - 443:443
+    networks:
+      - docker_inception_net
+    depends_on:
+      - wordpress
+    restart: on-failure
+
+####### REDIS ########
+  redis:
+    build:
+      context: ./requirements/bonus/redis
+      dockerfile: Dockerfile
+    container_name: redis
+    image: redis
+    depends_on:
+      - wordpress
+    networks:
+      - docker_inception_net
+    restart: always
+    ports:
+     - '6379:6379'
+    env_file:
+      - .env
+    volumes:
+      - "wp:/var/www/wordpress"
+
+####### ADMINER ########
+  adminer:
+    build: ./requirements/bonus/adminer
+    container_name: adminer
+    image: adminer
+    restart: always
+    depends_on:
+      - mariadb
+    expose:
+     - "9000"
+    networks:
+      - docker_inception_net
+
+####### CADVISOR ########
+  cadvisor:
+    build: ./requirements/bonus/cadvisor
+    container_name: cadvisor
+    image: cadvisor
+    ports:
+       - "8080:8080"
+    networks:
+     - docker_inception_net
+    volumes:
+      - /:/rootfs
+      - /var/run:/var/run
+      - /sys:/sys
+      - /var/lib/docker/:/var/lib/docker
+    restart: always
+
+####### VOLUMES ########
+volumes:
+  db:
+    name: mariadb
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: "bind"
+      device: ${HOME}/data/mysql
+  wp:
+   driver_opts:
+      type: 'none'
+      o: bind
+      device: ${HOME}/data/wordpress
+
+####### NETWORKS ########
+networks:
+    docker_inception_net:
+        driver: bridge

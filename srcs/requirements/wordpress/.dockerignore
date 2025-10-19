@@ -1,0 +1,24 @@
+# Git files
+.git
+.gitignore
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Build artifacts and local dependencies
+node_modules
+dist
+build
+target
+*.log
+
+# IDE and OS files
+.idea
+.vscode
+*.DS_Store
+
+# Secrets and environment files
+.env
+*.pem
+*.key

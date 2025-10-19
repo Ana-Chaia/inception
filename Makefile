@@ -1,0 +1,111 @@
+DOCKER_COMPOSE=docker compose -f $(DOCKER_COMPOSE_FILE)
+DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
+PROJECT_ENV_URL = https://github.com/apgaua/inceptioncache/tree/main/srcs
+DOMAIN_NAME = anacaro5.42.fr
+
+
+all: install config build
+
+verify_os:
+	@echo "Verificando sistema operacional (Ubuntu/Debian)..."
+	@if [ -r /etc/os-release ]; then \
+		. /etc/os-release; \
+		if [ "$$ID" = "debian" ] || [ "$$ID" = "ubuntu" ] || echo "$$ID_LIKE" | grep -qi debian; then \
+			echo "OK: $$PRETTY_NAME detectado."; \
+		else \
+			echo "Erro: Sistema não suportado: $$PRETTY_NAME"; exit 1; \
+		fi; \
+	else \
+		echo "Erro: /etc/os-release não encontrado. Abortando."; exit 1; \
+	fi
+
+install:
+	@$(MAKE) verify_os
+
+# Uninstall old versions
+	sudo apt remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --purge
+	sudo apt autoremove -y
+# Install Docker Engine, containerd, and Docker Compose.
+	curl -fsSL https://get.docker.com -o get-docker.sh
+	sudo sh ./get-docker.sh && rm ./get-docker.sh
+
+# Docker permissions
+	sudo usermod -aG docker $$(whoami)
+	echo "%docker ALL=(ALL) NOPASSWD: /home/$$(whoami)/data/*" | sudo tee /etc/sudoers.d/docker
+	@echo ""
+	@echo "Docker installed successfully!"
+	@docker --version
+	@echo ""
+	@docker compose version
+	@echo ""
+	@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	@echo "!! IMPORTANTE: Para que a permissão do grupo Docker seja aplicada,             !!"
+	@echo "!! você precisa SAIR e ENTRAR novamente, reiniciar o seu terminal, ou executar !!"
+	@echo "!! 'newgrp docker' neste terminal.                                             !!"
+	@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+    @printf "Deseja executar 'make config' agora? [y/N]: " ; \
+    read ans ; \
+    if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || [ "$$ans" = "yes" ] || [ "$$ans" = "YES" ]; then \
+        $(MAKE) config; \
+    else \
+        echo "Pulando 'make config'."; \
+    fi
+
+config:
+	@$(MAKE) verify_os
+	@echo "Getting the .env file..."
+	@if [ ! -f ./srcs/.env ]; then \
+		wget -P ./srcs $(PROJECT_ENV_URL)/.env; \
+		else echo ".env file already exists!"; \
+	fi
+	@echo ""
+	@echo ""
+	@echo "Add $(DOMAIN_NAME) in /etc/hosts..."
+		@if ! grep -q "$(DOMAIN_NAME)" /etc/hosts; then \
+		echo "127.0.0.1 $(DOMAIN_NAME)" | sudo tee -a /etc/hosts > /dev/null; \
+		else echo "$$(whoami).42.fr already exists in /etc/hosts!"; \
+	fi
+	
+# Create mariadb and wordpress directories if they don't exist
+
+	@if [ ! -d "/home/$$(whoami)/data/mysql" ]; then \
+		mkdir -p "/home/$$(whoami)/data/mysql"; \
+	else \
+		echo "Mysql data directory already exists!"; \
+	fi
+	@echo ""
+	@echo ""
+
+	@if [ ! -d "/home/$$(whoami)/data/wordpress" ]; then \
+		mkdir -p "/home/$$(whoami)/data/wordpress"; \
+	else \
+		echo "Wordpress data directory already exists!"; \
+	fi
+	@echo ""
+	@echo ""
+
+build:
+	@$(DOCKER_COMPOSE) up --build -d
+kill:
+	@$(DOCKER_COMPOSE) kill
+down:
+	@$(DOCKER_COMPOSE) down
+clean:
+	@$(DOCKER_COMPOSE) down -v
+
+fclean: clean
+	sudo sed -i "/$(DOMAIN_NAME)/d" /etc/hosts;
+	sudo rm -r ${HOME}/data || true
+	@echo "Pruning Docker system..."
+	docker system prune -a -f
+# sudo rm -r .env
+
+uninstall:
+	sudo apt remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --purge
+	sudo apt autoremove -y
+	sudo rm -r /etc/sudoers.d/docker || true
+
+restart: clean build
+
+.PHONY: build clean fclean down install kill restart uninstall verify_os config all
