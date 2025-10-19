@@ -3,12 +3,8 @@ services:
   mariadb:
     build:
       context: ./requirements/mariadb
-      args:
-        HOST_UID: "${HOST_UID:-1000}"
-        HOST_GID: "${HOST_GID:-1000}"
       dockerfile: Dockerfile
     container_name: mariadb
-    user: "${HOST_UID}:${HOST_GID}"
     image: mariadb
     env_file:
       - .env
@@ -107,14 +103,16 @@ services:
 ####### VOLUMES ########
 volumes:
   db:
-    name: mariadb
+    name: db
     driver: local
     driver_opts:
       type: 'none'
       o: "bind"
       device: ${HOME}/data/mysql
   wp:
-   driver_opts:
+    name: wp
+    driver: local
+    driver_opts:
       type: 'none'
       o: bind
       device: ${HOME}/data/wordpress

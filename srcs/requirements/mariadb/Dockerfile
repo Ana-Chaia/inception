@@ -1,12 +1,10 @@
 FROM debian:bullseye
-ARG HOST_UID
-ARG HOST_GID
 # Install mariadb environment
 RUN apt update && apt upgrade -y && apt install mariadb-server -y && rm -rf /var/lib/apt/lists/*
-# Modify the existing mysql user and group to match the host's UID/GID
-RUN groupmod -g ${HOST_GID} mysql \
-    && usermod -u ${HOST_UID} -g ${HOST_GID} mysql \
-    && chown -R mysql:mysql /var/lib/mysql
+# Create the directory for MySQL process and set permissions
+RUN mkdir -p /var/run/mysqld \
+&& chown -R mysql:mysql /var/run/mysqld \
+&& chmod 777 /var/run/mysqld
 # Update configuration file
 COPY /conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 # Set permissions for the configuration file
