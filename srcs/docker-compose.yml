@@ -11,7 +11,7 @@ services:
     volumes:
       - "db:/var/lib"
     networks:
-      - docker_inception_net
+      - inception_net
     restart: always
 
 ####### WORDPRESS ########
@@ -26,16 +26,10 @@ services:
     env_file:
       - .env
     networks:
-      - docker_inception_net
+      - inception_net
     expose:
       - "9000"
     restart: on-failure
-    healthcheck:
-      test: ["CMD-SHELL", "[ -f /var/www/html/.wp_ready ]"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
 
 ####### NGINX ########
   nginx:
@@ -47,7 +41,7 @@ services:
     ports:
       - 443:443
     networks:
-      - docker_inception_net
+      - inception_net
     depends_on:
       - wordpress
     restart: on-failure
@@ -62,7 +56,7 @@ services:
     depends_on:
       - wordpress
     networks:
-      - docker_inception_net
+      - inception_net
     restart: always
     ports:
      - '6379:6379'
@@ -82,7 +76,7 @@ services:
     expose:
      - "9000"
     networks:
-      - docker_inception_net
+      - inception_net
 
 ####### CADVISOR ########
   cadvisor:
@@ -92,7 +86,7 @@ services:
     ports:
        - "8080:8080"
     networks:
-     - docker_inception_net
+     - inception_net
     volumes:
       - /:/rootfs
       - /var/run:/var/run
@@ -119,5 +113,5 @@ volumes:
 
 ####### NETWORKS ########
 networks:
-    docker_inception_net:
+    inception_net:
         driver: bridge
