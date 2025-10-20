@@ -5,45 +5,61 @@ services:
       context: ./requirements/mariadb
       dockerfile: Dockerfile
     container_name: mariadb
-    image: mariadb
+    image: mariadb:42project
     env_file:
       - .env
+    expose:
+      - "3306"
     volumes:
-      - "db:/var/lib"
+      - "db:/var/lib/mysql"
     networks:
-      - inception_net
+      - inteption_net
     restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
 ####### WORDPRESS ########
   wordpress:
     build: ./requirements/wordpress
-    image: wordpress
     container_name: wordpress
+    image: wordpress:42project
     volumes:
-      - wp:/var/www/wordpress
+      - wp:/var/www/html
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     env_file:
       - .env
     networks:
-      - inception_net
+      - inteption_net
     expose:
       - "9000"
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "cgi-fcgi", "-bind", "-connect", "localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 ####### NGINX ########
   nginx:
     build: ./requirements/nginx
-    image: nginx
     container_name: nginx
+    image: nginx:42project
     volumes:
-      - wp:/var/www/wordpress
+      - wp:/var/www/html
     ports:
       - 443:443
     networks:
-      - inception_net
+      - inteption_net
     depends_on:
-      - wordpress
+      wordpress:
+        condition: service_healthy
     restart: on-failure
 
 ####### REDIS ########
@@ -51,42 +67,42 @@ services:
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
-    container_name: redis
+    container_name: redis:42project
     image: redis
     depends_on:
       - wordpress
     networks:
-      - inception_net
+      - inteption_net
     restart: always
     ports:
      - '6379:6379'
     env_file:
       - .env
     volumes:
-      - "wp:/var/www/wordpress"
+      - "wp:/var/www/html"
 
 ####### ADMINER ########
   adminer:
     build: ./requirements/bonus/adminer
     container_name: adminer
-    image: adminer
+    image: adminer:42project
     restart: always
     depends_on:
       - mariadb
     expose:
      - "9000"
     networks:
-      - inception_net
+      - inteption_net
 
 ####### CADVISOR ########
   cadvisor:
     build: ./requirements/bonus/cadvisor
     container_name: cadvisor
-    image: cadvisor
+    image: cadvisor:42project
     ports:
        - "8080:8080"
     networks:
-     - inception_net
+     - inteption_net
     volumes:
       - /:/rootfs
       - /var/run:/var/run
@@ -113,5 +129,5 @@ volumes:
 
 ####### NETWORKS ########
 networks:
-    inception_net:
+    inteption_net:
         driver: bridge

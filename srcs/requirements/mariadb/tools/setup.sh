@@ -1,35 +1,51 @@
 #!/bin/bash
+set -euo pipefail
 
-set -e # Faz o script parar se qualquer comando falhar
+DATADIR="/var/lib/mysql"
+chown -R mysql:mysql "$DATADIR"
 
-# Inicia o serviço MariaDB em background
-service mariadb start
+fresh=0
+if [ ! -d "$DATADIR/mysql" ]; then
+  echo "Inicializando data directory do MariaDB..."
+  mariadb-install-db --user=mysql --datadir="$DATADIR" --auth-root-authentication-method=normal
+  fresh=1
+fi
 
-# --- ESPERA O SERVIÇO FICAR PRONTO ---
-# Tenta se conectar repetidamente até que o servidor esteja aceitando conexões
+echo "Iniciando mysqld temporário..."
+mysqld_safe --datadir="$DATADIR" &
+MYSQLD_PID=$!
+
 until mariadb-admin ping --silent; do
-    echo "Aguardando o serviço MariaDB iniciar..."
-    sleep 2
+  sleep 1
 done
 
-echo "Serviço MariaDB iniciado. Configurando banco de dados e usuários..."
-
-# --- EXECUTA OS COMANDOS DE CONFIGURAÇÃO ---
-# Usa um "here document" (<<) para passar múltiplos comandos SQL de uma vez.
-# Isso é mais limpo e seguro.
-mariadb -u root <<-SQL
+# Se é a primeira vez, defina a senha do root
+if [ "$fresh" -eq 1 ]; then
+  mariadb -u root <<-SQL
     ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
+SQL
+fi
+
+# Tente com senha; se falhar, tente sem senha (cobre ambos cenários)
+if mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
+  mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" <<-SQL
     CREATE DATABASE IF NOT EXISTS \`${MARIADB_DATABASE}\`;
     CREATE USER IF NOT EXISTS '${MARIADB_USER}'@'%' IDENTIFIED BY '${MARIADB_PASSWORD}';
     GRANT ALL PRIVILEGES ON \`${MARIADB_DATABASE}\`.* TO '${MARIADB_USER}'@'%';
-
-    -- Aplica todas as mudanças
     FLUSH PRIVILEGES;
 SQL
+else
+  mariadb -u root <<-SQL
+    CREATE DATABASE IF NOT EXISTS \`${MARIADB_DATABASE}\`;
+    CREATE USER IF NOT EXISTS '${MARIADB_USER}'@'%' IDENTIFIED BY '${MARIADB_PASSWORD}';
+    GRANT ALL PRIVILEGES ON \`${MARIADB_DATABASE}\`.* TO '${MARIADB_USER}'@'%';
+    FLUSH PRIVILEGES;
+SQL
+fi
 
-echo "Configuração do MariaDB concluída."
+# Desliga o temporário e inicia em foreground
+mariadb-admin -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown || mariadb-admin -u root shutdown || true
+wait "$MYSQLD_PID" || true
 
-# Para o serviço que estava em background para que o CMD/ENTRYPOINT principal possa iniciá-lo em foreground
-# Isso garante que o container não morra após o script terminar.
-mysqladmin -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown
-exec mysqld_safe
+echo "Iniciando MariaDB em foreground..."
+exec mysqld_safe --datadir="$DATADIR"

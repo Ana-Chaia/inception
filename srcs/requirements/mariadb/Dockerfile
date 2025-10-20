@@ -1,11 +1,17 @@
 FROM debian:bullseye
+
+ARG MARIADB_USER
+ARG MARIADB_PASSWORD
+ARG MARIADB_DATABASE
+ARG MARIADB_ROOT_PASSWORD
+
 # Install mariadb environment
 RUN apt update && apt upgrade -y && apt install mariadb-server -y && rm -rf /var/lib/apt/lists/*
 # Create the directory for MySQL process and set permissions
 
     RUN mkdir -p /var/run/mysqld \
-        && chown -R mysql:mysql /var/run/mysqld \
-        && chmod 777 /var/run/mysqld
+	&& chown -R mysql:mysql /var/run/mysqld \
+	&& chmod 777 /var/run/mysqld
 # Update configuration file
 COPY /conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 # Set permissions for the configuration file

@@ -1,11 +1,13 @@
 DOCKER_COMPOSE=docker compose -f $(DOCKER_COMPOSE_FILE)
 DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
-PROJECT_ENV_URL = https://github.com/apgaua/inceptioncache/tree/main/srcs
+PROJECT_ENV_URL = https://github.com/Ana-Chaia/inception/tree/main/srcs
 DOMAIN_NAME = anacaro5.42.fr
 
+.PHONY: build clean fclean down install kill restart uninstall verify_os config
 
-all: install config build
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 verify_os:
 	@echo "Verificando sistema operacional (Ubuntu/Debian)..."
 	@if [ -r /etc/os-release ]; then \
@@ -17,8 +19,7 @@ verify_os:
 		fi; \
 	else \
 		echo "Erro: /etc/os-release não encontrado. Abortando."; exit 1; \
-	fi
-
+	fi;
 install:
 	@$(MAKE) verify_os
 
@@ -50,7 +51,11 @@ install:
         $(MAKE) config; \
     else \
         echo "Pulando 'make config'."; \
-    fi
+    fi;
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 config:
 	@$(MAKE) verify_os
@@ -61,6 +66,7 @@ config:
 	fi
 	@echo ""
 	@echo ""
+
 	@echo "Add $(DOMAIN_NAME) in /etc/hosts..."
 		@if ! grep -q "$(DOMAIN_NAME)" /etc/hosts; then \
 		echo "127.0.0.1 $(DOMAIN_NAME)" | sudo tee -a /etc/hosts > /dev/null; \
@@ -85,6 +91,10 @@ config:
 	@echo ""
 	@echo ""
 
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 build:
 	@$(DOCKER_COMPOSE) up --build -d
 kill:
@@ -99,7 +109,6 @@ fclean: clean
 	sudo rm -r ${HOME}/data || true
 	@echo "Pruning Docker system..."
 	docker system prune -a -f
-# sudo rm -r .env
 
 uninstall:
 	sudo apt remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --purge
@@ -107,5 +116,3 @@ uninstall:
 	sudo rm -r /etc/sudoers.d/docker || true
 
 restart: clean build
-
-.PHONY: build clean fclean down install kill restart uninstall verify_os config all
