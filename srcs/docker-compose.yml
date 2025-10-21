@@ -67,8 +67,8 @@ services:
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
-    container_name: redis:42project
-    image: redis
+    container_name: redis
+    image: redis:42project
     depends_on:
       - wordpress
     networks:
@@ -78,6 +78,11 @@ services:
      - '6379:6379'
     env_file:
       - .env
+    command:
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${REDIS_PASSWORD}"
     volumes:
       - "wp:/var/www/html"
 

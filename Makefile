@@ -3,11 +3,8 @@ DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
 PROJECT_ENV_URL = https://github.com/Ana-Chaia/inception/tree/main/srcs
 DOMAIN_NAME = anacaro5.42.fr
 
-.PHONY: build clean fclean down install kill restart uninstall verify_os config
+all: install config build
 
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
 verify_os:
 	@echo "Verificando sistema operacional (Ubuntu/Debian)..."
 	@if [ -r /etc/os-release ]; then \
@@ -20,6 +17,7 @@ verify_os:
 	else \
 		echo "Erro: /etc/os-release não encontrado. Abortando."; exit 1; \
 	fi;
+
 install:
 	@$(MAKE) verify_os
 
@@ -29,7 +27,6 @@ install:
 # Install Docker Engine, containerd, and Docker Compose.
 	curl -fsSL https://get.docker.com -o get-docker.sh
 	sudo sh ./get-docker.sh && rm ./get-docker.sh
-
 # Docker permissions
 	sudo usermod -aG docker $$(whoami)
 	echo "%docker ALL=(ALL) NOPASSWD: /home/$$(whoami)/data/*" | sudo tee /etc/sudoers.d/docker
@@ -39,24 +36,7 @@ install:
 	@echo ""
 	@docker compose version
 	@echo ""
-	@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-	@echo "!! IMPORTANTE: Para que a permissão do grupo Docker seja aplicada,             !!"
-	@echo "!! você precisa SAIR e ENTRAR novamente, reiniciar o seu terminal, ou executar !!"
-	@echo "!! 'newgrp docker' neste terminal.                                             !!"
-	@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
-    @printf "Deseja executar 'make config' agora? [y/N]: " ; \
-    read ans ; \
-    if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || [ "$$ans" = "yes" ] || [ "$$ans" = "YES" ]; then \
-        $(MAKE) config; \
-    else \
-        echo "Pulando 'make config'."; \
-    fi;
-
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
-
+	
 config:
 	@$(MAKE) verify_os
 	@echo "Getting the .env file..."
@@ -91,10 +71,6 @@ config:
 	@echo ""
 	@echo ""
 
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
-
 build:
 	@$(DOCKER_COMPOSE) up --build -d
 kill:
@@ -106,7 +82,12 @@ clean:
 
 fclean: clean
 	sudo sed -i "/$(DOMAIN_NAME)/d" /etc/hosts;
-	sudo rm -r ${HOME}/data || true
+	@if [ -d "$(HOME)/data" ]; then \
+        echo "Removendo $(HOME)/data..."; \
+        sudo rm -rf "$(HOME)/data"; \
+    else \
+        echo "$(HOME)/data não existe. Pulando remoção."; \
+    fi
 	@echo "Pruning Docker system..."
 	docker system prune -a -f
 
@@ -116,3 +97,5 @@ uninstall:
 	sudo rm -r /etc/sudoers.d/docker || true
 
 restart: clean build
+
+.PHONY: build clean fclean down install kill restart uninstall verify_os config all

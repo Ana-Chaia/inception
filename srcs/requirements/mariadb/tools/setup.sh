@@ -19,14 +19,14 @@ until mariadb-admin ping --silent; do
   sleep 1
 done
 
-# Se é a primeira vez, defina a senha do root
+# If this is the first time, set the root password
 if [ "$fresh" -eq 1 ]; then
   mariadb -u root <<-SQL
     ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
 SQL
 fi
 
-# Tente com senha; se falhar, tente sem senha (cobre ambos cenários)
+# Try with password; if it fails, try without password (covers both scenarios)
 if mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
   mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" <<-SQL
     CREATE DATABASE IF NOT EXISTS \`${MARIADB_DATABASE}\`;
@@ -43,7 +43,7 @@ else
 SQL
 fi
 
-# Desliga o temporário e inicia em foreground
+# Shut down the temporary instance and start in foreground
 mariadb-admin -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown || mariadb-admin -u root shutdown || true
 wait "$MYSQLD_PID" || true
 

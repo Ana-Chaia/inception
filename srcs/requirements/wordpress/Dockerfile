@@ -8,14 +8,14 @@ RUN apt-get update && apt-get upgrade -y && apt install php7.4\
     php7.4-gd php7.4-curl mariadb-client sendmail \
     libfcgi-bin -y && rm -rf /var/lib/apt/lists/*
 
-# Configura o PHP-FPM para escutar na rede
+# Configure PHP-FPM to listen on the network
 RUN mkdir -p /run/php && \
     sed -i "s/listen = \/run\/php\/php7.4-fpm.sock/listen = 0.0.0.0:9000/" /etc/php/7.4/fpm/pool.d/www.conf
 
-# Define o diretório de trabalho padrão
+# Set the default working directory
 WORKDIR /var/www/html
 
-# Instala o wp-cli
+# Install wp-cli
 RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
     chmod +x wp-cli.phar && \
     mv wp-cli.phar /usr/local/bin/wp && \
@@ -23,12 +23,12 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     tar -xvzf latest.tar.gz --strip-components=1 && \
     rm -rf latest.tar.gz
 
-# Copia o script de inicialização
+# Copy the initialization script
 COPY ./tools/installwp.sh /tmp/installwp.sh
 RUN chmod +x /tmp/installwp.sh
 
-# Expõe a porta do PHP-FPM
+# Expose the PHP-FPM port
 EXPOSE 9000
 
-# Define o ponto de entrada para executar o script de configuração
+# Set the entry point to run the configuration script
 CMD ["/tmp/installwp.sh"]
