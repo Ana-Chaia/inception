@@ -109,10 +109,12 @@ services:
     networks:
      - inteption_net
     volumes:
-      - /:/rootfs
-      - /var/run:/var/run
-      - /sys:/sys
-      - /var/lib/docker/:/var/lib/docker
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw              # docker.sock
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro  # cgroups v2
     restart: always
 
 ####### VOLUMES ########
