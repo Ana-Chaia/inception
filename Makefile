@@ -3,7 +3,7 @@ DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
 PROJECT_ENV_URL = https://raw.githubusercontent.com/Ana-Chaia/inception/refs/heads/main/srcs/
 DOMAIN_NAME = anacaro5.42.fr
 
-all: config build
+all: install config build
 
 verify_os:
 	@echo "Verificando sistema operacional (Ubuntu/Debian)..."
@@ -21,13 +21,12 @@ verify_os:
 install:
 	@$(MAKE) verify_os
 
-# Uninstall old versions
 	sudo apt remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --purge
 	sudo apt autoremove -y
-# Install Docker Engine, containerd, and Docker Compose.
+
 	curl -fsSL https://get.docker.com -o get-docker.sh
 	sudo sh ./get-docker.sh && rm ./get-docker.sh
-# Docker permissions
+
 	sudo usermod -aG docker $$(whoami)
 	echo "%docker ALL=(ALL) NOPASSWD: /home/$$(whoami)/data/*" | sudo tee /etc/sudoers.d/docker
 	@echo ""
@@ -53,8 +52,6 @@ config:
 		else echo "$$(whoami).42.fr already exists in /etc/hosts!"; \
 	fi
 	
-# Create mariadb and wordpress directories if they don't exist
-
 	@if [ ! -d "/home/$$(whoami)/data/mysql" ]; then \
 		mkdir -p "/home/$$(whoami)/data/mysql"; \
 	else \

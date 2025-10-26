@@ -95,6 +95,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Env files
-#*.env
+*.env
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,windows,linux
