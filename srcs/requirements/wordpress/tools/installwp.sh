@@ -63,4 +63,4 @@ else
 fi
 
 echo "Iniciando o PHP-FPM..."
-exec php-fpm7.4 -F
+exec /usr/sbin/php-fpm8.2 -F

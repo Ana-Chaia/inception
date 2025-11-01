@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:oldstable
 
 #Install REDIS
 RUN apt update && apt upgrade -y && apt install redis -y && rm -rf /var/lib/apt/lists/*

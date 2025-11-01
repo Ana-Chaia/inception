@@ -1,6 +1,6 @@
 DOCKER_COMPOSE=docker compose -f $(DOCKER_COMPOSE_FILE)
 DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
-PROJECT_ENV_URL = https://limewire.com/d/B3Iwj#UaFJmsqZx4
+PROJECT_ENV_URL = https://raw.githubusercontent.com/Ana-Chaia/inception/refs/heads/main/srcs
 DOMAIN_NAME = anacaro5.42.fr
 
 all: install config build

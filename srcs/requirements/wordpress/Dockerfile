@@ -1,21 +1,21 @@
-FROM debian:bullseye
+FROM debian:oldstable
 
-RUN apt-get update && apt-get upgrade -y && apt install php7.4\
-    php7.4-fpm php7.4-mysql curl\
-    php-common php7.4-cli php7.4-common php7.4-redis \
-    php7.4-json php7.4-opcache php7.4-readline \
-    php7.4-mbstring php7.4-xml redis php-redis \
-    php7.4-gd php7.4-curl mariadb-client sendmail \
+RUN apt-get update && apt-get upgrade -y && apt install php\
+    php-fpm php8.2-fpm php-mysql curl\
+    php-common php-cli php-common php-redis \
+    php-opcache php-readline \
+    php-mbstring php-xml redis php-redis \
+    php-gd php-curl mariadb-client sendmail \
     libfcgi-bin -y && rm -rf /var/lib/apt/lists/*
 
-# Configure PHP-FPM to listen on the network
+# Configura o PHP-FPM para escutar na rede
 RUN mkdir -p /run/php && \
-    sed -i "s/listen = \/run\/php\/php7.4-fpm.sock/listen = 0.0.0.0:9000/" /etc/php/7.4/fpm/pool.d/www.conf
+    sed -i "s/listen = \/run\/php\/php8.2-fpm.sock/listen = 0.0.0.0:9000/" /etc/php/8.2/fpm/pool.d/www.conf
 
-# Set the default working directory
+# Define o diretório de trabalho padrão
 WORKDIR /var/www/html
 
-# Install wp-cli
+# Instala o wp-cli
 RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
     chmod +x wp-cli.phar && \
     mv wp-cli.phar /usr/local/bin/wp && \
@@ -23,12 +23,12 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     tar -xvzf latest.tar.gz --strip-components=1 && \
     rm -rf latest.tar.gz
 
-# Copy the initialization script
+# Copia o script de inicialização
 COPY ./tools/installwp.sh /tmp/installwp.sh
 RUN chmod +x /tmp/installwp.sh
 
-# Expose the PHP-FPM port
+# Expõe a porta do PHP-FPM
 EXPOSE 9000
 
-# Set the entry point to run the configuration script
+# Define o ponto de entrada para executar o script de configuração
 CMD ["/tmp/installwp.sh"]

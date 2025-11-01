@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:oldstable
 
 #Install NGINX enviroment
 RUN apt update && apt upgrade -y && apt install nginx openssl curl -y && rm -rf /var/lib/apt/lists/*

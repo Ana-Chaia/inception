@@ -1,15 +1,15 @@
-FROM debian:bullseye
+FROM debian:oldstable
 
 # Install necessary packages including PHP and PHP-FPM
 RUN apt-get update && apt upgrade -y && \
     apt-get install -y curl less \
-    php7.4 php7.4-fpm php7.4-common \
-    php7.4-json php7.4-gd php7.4-curl \
-    php7.4-xml php7.4-mysql \
-    php7.4-imap php7.4-pdo \
-    php7.4-soap php7.4-ldap \
-    php7.4-ctype php7.4-dom \
-    php7.4-mbstring php7.4-zip && \
+    php php-fpm php-common \
+    php-gd php-curl \
+    php-xml php-mysql \
+    php-imap php-pdo \
+    php-soap php-ldap \
+    php-ctype php-dom \
+    php-mbstring php-zip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -20,11 +20,11 @@ RUN mkdir -p /var/www/html
 RUN mkdir -p /run/php
 
 # Download Adminer and set permissions
-RUN curl -L -o /var/www/html/index.php https://github.com/vrana/adminer/releases/download/v5.4.0/adminer-5.4.0-mysql.php && \
+RUN curl -L -o /var/www/html/index.php https://github.com/vrana/adminer/releases/download/v5.4.1/adminer-5.4.1-mysql.php && \
     chown www-data:www-data /var/www/html/index.php
 
 # Copy PHP-FPM configuration file
-COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 
 # Expose port 9000 for PHP-FPM
 EXPOSE 9000
@@ -33,4 +33,4 @@ EXPOSE 9000
 STOPSIGNAL SIGQUIT
 
 # Start PHP-FPM in the foreground
-CMD ["php-fpm7.4", "--nodaemonize"]
+CMD ["php-fpm8.2", "--nodaemonize"]

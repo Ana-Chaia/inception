@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:oldstable
 
 ARG MARIADB_USER
 ARG MARIADB_PASSWORD
